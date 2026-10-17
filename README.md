@@ -1,5 +1,7 @@
 # Jungle Gaming — Frontend Challenge
 
+[![Validate project](https://github.com/Mirtiloo1/jungle-gaming-frontend-challenge/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Mirtiloo1/jungle-gaming-frontend-challenge/actions/workflows/ci.yml)
+
 Marketplace Kurio em desenvolvimento. A home inclui catálogo integrado à API
 simulada, filtros combinados, busca, ordenação, paginação e favoritos por conta.
 Login/cadastro usam modais responsivos. A tela de detalhes inclui galeria,

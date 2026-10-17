@@ -1,8 +1,6 @@
-import { delay, http, HttpResponse, ws } from 'msw'
-import { toSocketIo } from '@mswjs/socket.io-binding'
+import { delay, http, HttpResponse } from 'msw'
 import { authenticatedUser, readDatabase, writeDatabase } from './database'
 import { cartResponse } from './cart'
-import { updateNftMarket } from './nft-market'
 import {
   cartFingerprint,
   checkoutAccount,
@@ -279,62 +277,4 @@ export const checkoutHandlers = [
       ? HttpResponse.json(order)
       : fail('Pedido não encontrado nesta conta.', 404)
   }),
-  // MSW normaliza o caminho Socket.IO para a origem antes de comparar o handler.
-  ws
-    .link(window.location.origin.replace(/^http/, 'ws'))
-    .addEventListener('connection', (connection) => {
-      const io = toSocketIo(connection)
-      let timer: ReturnType<typeof setInterval> | undefined
-      let marketTimer: ReturnType<typeof setTimeout> | undefined
-      io.client.on('nft.subscribe', () => {
-        if (marketTimer) clearTimeout(marketTimer)
-        marketTimer = setTimeout(() => {
-          if (scenario() !== 'nft-updated') return
-          const event = updateNftMarket()
-          if (event) io.client.emit('nft.updated', event)
-        }, 700)
-      })
-      io.client.on(
-        'order.subscribe',
-        (_event, payload: { token: string; orderId: string }) => {
-          if (timer) clearInterval(timer)
-          const request = new Request(window.location.origin, {
-            headers: { Authorization: `Bearer ${payload.token}` },
-          })
-          const user = authenticatedUser(request)
-          if (!user) {
-            connection.client.close()
-            return
-          }
-          let version = 0
-          const send = () => {
-            if (!authenticatedUser(request)) {
-              connection.client.close()
-              return
-            }
-            const order = recoverOrder(user.id, payload.orderId)
-            if (order && order.version > version) {
-              version = order.version
-              io.client.emit('order.updated', {
-                userId: user.id,
-                id: order.id,
-                version,
-                order,
-              })
-            }
-            if (order?.status !== 'pending' && timer) clearInterval(timer)
-          }
-          send()
-          timer = setInterval(send, 300)
-        },
-      )
-      // Engine.IO heartbeat para conexões longas.
-      connection.client.addEventListener('message', (event) => {
-        if (event.data === '2') connection.client.send('3')
-      })
-      connection.client.addEventListener('close', () => {
-        if (timer) clearInterval(timer)
-        if (marketTimer) clearTimeout(marketTimer)
-      })
-    }),
 ]

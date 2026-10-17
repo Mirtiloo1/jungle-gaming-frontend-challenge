@@ -44,7 +44,6 @@
   "devDependencies": {
     "@eslint/js": "^9.0.0",
     "@lhci/cli": "^0.15.1",
-    "@mswjs/socket.io-binding": "latest",
     "@playwright/test": "^1.0.0",
     "@tailwindcss/vite": "^4.0.0",
     "@types/node": "^22.0.0",

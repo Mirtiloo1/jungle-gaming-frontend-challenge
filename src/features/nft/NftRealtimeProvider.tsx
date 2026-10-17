@@ -20,10 +20,13 @@ export default function NftRealtimeProvider({
   const client = useQueryClient()
   const versions = useRef(new Map<string, number>())
   useEffect(() => {
-    const socket = io(window.location.origin, {
-      transports: ['websocket'],
-      forceNew: true,
-    })
+    const socket =
+      import.meta.env.VITE_ENABLE_MOCKS === 'false'
+        ? io(window.location.origin, {
+            transports: ['websocket'],
+            forceNew: true,
+          })
+        : null
     const receive = (event: MarketEvent) => {
       if (event.version <= (versions.current.get(event.id) ?? 0)) return
       versions.current.set(event.id, event.version)
@@ -61,8 +64,8 @@ export default function NftRealtimeProvider({
         refetchType: 'active',
       })
     }
-    socket.on('connect', () => socket.emit('nft.subscribe'))
-    socket.on('nft.updated', receive)
+    socket?.on('connect', () => socket.emit('nft.subscribe'))
+    socket?.on('nft.updated', receive)
     const poll = async () => {
       try {
         const response = await fetch('/api/nft-events')
@@ -76,7 +79,7 @@ export default function NftRealtimeProvider({
     const polling = window.setInterval(() => void poll(), 2_000)
     return () => {
       window.clearInterval(polling)
-      socket.disconnect()
+      socket?.disconnect()
     }
   }, [client])
   return children

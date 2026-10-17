@@ -168,15 +168,16 @@ export function useCheckoutFlow(user: SessionUser) {
   useEffect(() => {
     if (!orderId || !token) return
     setSocketVersion(0)
-    const socket = io(
-      import.meta.env.VITE_ENABLE_MOCKS !== 'false'
-        ? window.location.origin
-        : (import.meta.env.VITE_SOCKET_URL ?? window.location.origin),
-      { transports: ['websocket'], reconnectionDelay: 1000 },
-    )
+    const socket =
+      import.meta.env.VITE_ENABLE_MOCKS === 'false'
+        ? io(import.meta.env.VITE_SOCKET_URL ?? window.location.origin, {
+            transports: ['websocket'],
+            reconnectionDelay: 1000,
+          })
+        : null
     const onConnect = () => {
       if (readSessionToken() !== token) return
-      socket.emit('order.subscribe', { token, orderId })
+      socket?.emit('order.subscribe', { token, orderId })
       void client.invalidateQueries({
         queryKey: ['checkout', user.id, 'order', orderId],
       })
@@ -204,12 +205,12 @@ export function useCheckoutFlow(user: SessionUser) {
         return
       client.setQueryData(key, event.order)
     }
-    socket.on('connect', onConnect)
-    socket.on('order.updated', onUpdate)
+    socket?.on('connect', onConnect)
+    socket?.on('order.updated', onUpdate)
     return () => {
-      socket.off('connect', onConnect)
-      socket.off('order.updated', onUpdate)
-      socket.disconnect()
+      socket?.off('connect', onConnect)
+      socket?.off('order.updated', onUpdate)
+      socket?.disconnect()
     }
   }, [orderId, token, user.id, client])
   useEffect(() => {

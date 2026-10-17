@@ -1,0 +1,1 @@
+Snapshots visuais do Playwright
